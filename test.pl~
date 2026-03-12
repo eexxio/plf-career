@@ -1,0 +1,68 @@
+% ============================================================
+% Proiect: Sistem Expert - Recomandare Cariera
+% Fisier:  test.pl
+% Scop:    Unit testing manual pentru toate modulele
+% Depinde: main.pl, matching.pl, knowledge_base.pl
+% ============================================================
+
+:- [main].
+
+% ============================================================
+% ruleaza_teste
+%   Predicatul principal care executa toate suitele de test.
+%   Utilizare: ?- ruleaza_teste.
+% ============================================================
+
+ruleaza_teste :-
+    writeln('--- Incepere Testare Manuala ---'),
+    test_intersectie,
+    test_matching_logic,
+    test_scoring_formula,
+    test_recomandare_top,
+    test_filtrare_avansata,
+    writeln('--- Toate testele au fost finalizate cu succes ---').
+
+% --- Teste Logica Interna (din matching.pl) ---
+
+test_intersectie :-
+    intersectie([a, b, c], [b, c, d], [b, c]),
+    intersectie([programare], [design], []),
+    writeln('[OK] Test Intersectie (Seturi comune)').
+
+test_matching_logic :-
+    match_abilitati(programator_software, [programare, algoritmi], ScoreA),
+    ScoreA > 0,
+    match_interese(data_scientist, [stiinta, tehnologie], ScoreI),
+    ScoreI > 0,
+    writeln('[OK] Test Matching (Abilitati si Interese)').
+
+test_scoring_formula :-
+    scor(arhitect, [software_cad], [arta], S),
+    S >= 0, S =< 1,
+    writeln('[OK] Test Calcul Scor (Ponderat)').
+
+% --- Teste Integrare (din main.pl) ---
+
+test_recomandare_top :-
+    recomanda([programare, baze_de_date], [tehnologie, inovatie], Rezultate),
+    Rezultate = [scor(_, programator_software)|_],
+    writeln('[OK] Test Recomandare (Validare Top Cariera)').
+
+test_filtrare_avansata :-
+    % Test filtrare dupa industrie
+    recomanda_filtrat([matematica], [finante], [industrie(finante)], R1),
+    forall(member(scor(_, C), R1), cariera(C, _, finante)),
+    
+    % Test filtrare dupa educatie (Medic generalist cere doctorat)
+    recomanda_filtrat([cunostinte_medicale], [sanatate], [educatie_max(licenta)], R2),
+    \+ member(scor(_, medic_generalist), R2),
+    
+    % Test filtrare dupa salariu
+    recomanda_filtrat([programare], [tehnologie], [salariu_min(15000)], R3),
+    forall(member(scor(_, C3), R3), (salariu(C3, interval(_, Max)), Max >= 15000)),
+    
+    writeln('[OK] Test Filtrare (Industrie, Educatie, Salariu)').
+
+% ============================================================
+% Sfarsit test.pl
+% ============================================================
